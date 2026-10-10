@@ -1,0 +1,155 @@
+import os
+import pandas as pd
+import psycopg
+import matplotlib.pyplot as plt
+import platform
+"""
+widnows 환경변수를 가져온다.
+"""
+# 1. 운영체제별 한글 폰트 설정
+if platform.system() == 'Darwin':  # Mac
+    plt.rc('font', family='AppleGothic')
+elif platform.system() == 'Windows':  # Windows
+    plt.rc('font', family='Malgun Gothic')
+else:  # Linux (Google Colab 등)
+    plt.rc('font', family='NanumGothic')
+
+# 2. 그래프에서 마이너스(-) 기호가 깨지는 현상 방지
+plt.rcParams['axes.unicode_minus'] = False
+
+def get_required_env(name: str) -> str:
+
+    value = os.getenv(name)
+
+    if value is None or value.strip() == "":
+        raise RuntimeError(
+            f"필수 환경변수가 없습니다: {name}"
+        )
+
+    return value.strip()
+  
+# PostgreSQL 연결
+
+def get_db_connection():
+
+    host = get_required_env(
+        "db_host"
+    )
+
+    port = os.getenv(
+        "db_port",
+        "5432"
+    )
+
+    user = get_required_env(
+        "db_user"
+    )
+
+    password = get_required_env(
+        "db_pw"
+    )
+
+    dbname = os.getenv(
+        "db_name",
+        "postgres"
+    )
+
+    return psycopg.connect(
+        host=host,
+        port=port,
+        user=user,
+        password=password,
+        dbname=dbname
+    )
+
+def main():
+    conn = None
+    success_count = 0
+    fail_count = 0
+
+    try:
+        conn = get_db_connection()
+
+        # vw_daily_price_yearly 테이블 조회
+        sql = """
+              SELECT
+                  exmn_year,
+                  season,
+                  avg_season_price
+              FROM vw_daily_price_seasonal
+              ORDER BY
+                  exmn_year,
+                  CASE season
+                      WHEN '봄배추' THEN 1
+                      WHEN '고랭지배추' THEN 2
+                      WHEN '김장배추' THEN 3
+                      WHEN '월동배추' THEN 4
+                  END
+        """
+
+        # DataFrame으로 변환
+        df_seasonal   = pd.read_sql(sql, conn)
+
+        # 연결 종료
+        conn.close()
+
+        # DataFrame 기본 정보 출력
+        print("===== vw_daily_price_seasonal DataFrame 기본 정보 =====")
+
+        print("\n DataFrame 기본 정보")
+        df_seasonal .info()
+
+        # 계절별 평균 가격 계산
+        season_avg = (
+            df_seasonal
+            .groupby("season")["avg_season_price"]
+            .mean()
+            .reindex(["봄배추", "고랭지배추", "김장배추", "월동배추"])
+        )
+
+        # 데이터 타입을 명확하게 지정
+        x = season_avg.index.tolist()
+        y = season_avg.to_numpy(dtype=float)
+
+        # 막대 그래프
+        bars = plt.bar(
+            x,
+            y
+        )
+
+        # 그래프 제목
+        plt.title("계절별 배추 평균 가격")
+
+        # 축 이름
+        plt.xlabel("계절")
+        plt.ylabel("평균 가격")
+
+        # 각 막대에 구체적인 수치 표시
+        plt.bar_label(
+            bars,
+            labels=[f"{value:,.0f}" for value in y],
+            padding=3
+        )
+
+        # Y축 여백
+        plt.ylim(0, y.max() * 1.15)
+
+        # 격자
+        plt.grid(axis="y", linestyle="--", alpha=0.5)
+
+        plt.tight_layout()
+        plt.show()
+
+    except Exception:
+        return 1
+
+    finally:
+        if conn:
+            conn.close()
+
+# ============================================================
+# 21. Program Entry Point
+# ============================================================
+if __name__ == "__main__":
+
+  main()

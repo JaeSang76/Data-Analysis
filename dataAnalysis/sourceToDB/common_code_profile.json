@@ -1,0 +1,50 @@
+{
+  "source_file": "common_code.txt",
+  "original": {
+    "rows": 693,
+    "columns": 5,
+    "column_names": [
+      "class_cd",
+      "item_cd",
+      "variety_cd",
+      "grade_cd",
+      "grade_nm"
+    ]
+  },
+  "cleaned": {
+    "rows": 693,
+    "removed_rows": 0
+  },
+  "columns": [
+    {
+      "column": "class_cd",
+      "postgres_type": "VARCHAR(3)",
+      "max_length": 3,
+      "reason": "문자열/분류명"
+    },
+    {
+      "column": "item_cd",
+      "postgres_type": "VARCHAR(4)",
+      "max_length": 4,
+      "reason": "문자열/분류명"
+    },
+    {
+      "column": "variety_cd",
+      "postgres_type": "VARCHAR(2)",
+      "max_length": 2,
+      "reason": "문자열/분류명"
+    },
+    {
+      "column": "grade_cd",
+      "postgres_type": "VARCHAR(2)",
+      "max_length": 2,
+      "reason": "문자열/분류명"
+    },
+    {
+      "column": "grade_nm",
+      "postgres_type": "VARCHAR(6)",
+      "max_length": 6,
+      "reason": "문자열/분류명"
+    }
+  ]
+}
